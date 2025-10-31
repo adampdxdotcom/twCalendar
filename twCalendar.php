@@ -48,5 +48,14 @@ function tw_calendar_enqueue_assets() {
         '1.0.0', // The version of your script
         true     // Load the script in the footer
     );
+	
+	    // Enqueue the modal window script
+    wp_enqueue_script(
+        'tw-calendar-scroller', // A unique name (handle) for our script
+        plugin_dir_url( __FILE__ ) . 'assets/js/modal_window.js', // The full URL to the script
+        array(), // An array of script handles this script depends on (e.g., 'jquery')
+        '1.0.0', // The version of your script
+        true     // Load the script in the footer
+    );
 }
 add_action( 'wp_enqueue_scripts', 'tw_calendar_enqueue_assets' );
