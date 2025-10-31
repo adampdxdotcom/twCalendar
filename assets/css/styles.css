@@ -1,0 +1,701 @@
+/* ===================================================================
+   SECTION 15: MAIN EVENTS CALENDAR (FULL PAGE)
+   =================================================================== */
+
+.calendar-container,
+.featured-items-container {
+    width: 1100px !important;
+    max-width: none !important;
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 20px;
+}
+
+.calendar-title {
+    font-size: 1.8em;
+    font-weight: normal;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+/* --- Grid View Styles --- */
+table.calendar-wrapper {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 5px;
+    table-layout: fixed;
+}
+table.calendar-wrapper th {
+    background-color: #a7b59a;
+    color: #222;
+    font-weight: bold;
+    text-transform: uppercase;
+    border: 1px solid #8e9c84;
+    border-radius: 4px;
+    padding: 0.75em 1.2em;
+    font-size: 1.3em;
+}
+table.calendar-wrapper td {
+    vertical-align: top;
+    padding: 5px;
+    height: 110px;
+    box-sizing: border-box;
+    border-radius: 4px;
+    background-color: #f7f7f7;
+}
+
+/* --- Event Box Styles (Grid & List) --- */
+.event-box {
+    margin-top: 4px;
+    padding: 3px;
+    border-radius: 4px;
+    color: #000;
+    word-wrap: break-word;
+    position: relative;
+    overflow: hidden;
+    font-weight: bold;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+.event-title { font-size: 0.9em; line-height: 1.2; }
+.event-time { font-size: 1em; text-align: right; font-weight: normal; }
+a.event-link, a.event-link:hover { text-decoration: none; color: inherit; }
+.event-link:hover .event-box {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+}
+.event-box.cancelled {
+    background-color: #e0e0e0 !important;
+    color: #888;
+    min-height: 30px;
+}
+.event-box.cancelled::after {
+    content: 'CANCELLED'; position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    color: rgba(255, 0, 0, 0.7); font-size: 1.1em; font-weight: bold;
+    text-transform: uppercase; line-height: 1; z-index: 1; pointer-events: none;
+}
+
+/* --- Calendar Controls --- */
+.calendar-header { margin-bottom: 10px; }
+.calendar-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    gap: 100px;
+}
+.calendar-filters, .calendar-quick-nav { display: flex; align-items: center; gap: 8px; }
+.calendar-quick-nav a { text-decoration: none; color: #ba0000; font-weight: bold; }
+.view-switcher { padding-right: 10px; margin-right: 10px; border-right: 1px solid #ccc; }
+.view-switcher a { text-decoration: none; color: #ba0000; }
+.view-switcher a.active { font-weight: bold; text-decoration: underline; color: #000; }
+
+.themed-select-wrapper {
+    position: relative;
+    display: inline-block;
+    background-color: #f7f7f7;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.themed-select-wrapper:hover {
+    border-color: #ba0000;
+    box-shadow: 0 0 5px rgba(186, 0, 0, 0.3);
+}
+.themed-select-wrapper::after {
+    content: '▼'; position: absolute; top: 50%; right: 12px;
+    transform: translateY(-50%); pointer-events: none;
+    font-size: 12px; color: #555; transition: color 0.2s ease;
+}
+.themed-select-wrapper:hover::after { color: #ba0000; }
+.themed-select-wrapper select {
+    -webkit-appearance: none; appearance: none;
+    background: transparent; border: none;
+    font-family: 'Manrope', sans-serif;
+    font-size: 16px; font-weight: 500; color: #333;
+    padding: 10px 40px 10px 15px;
+    cursor: pointer; width: 100%; margin: 0;
+}
+
+.calendar-controls .calendar-filters button {
+  background-color: #ba0000;
+  color: #ffffff !important;
+  border-radius: 30px;
+  border: none;
+  padding: 0.6em 1.5em;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  font-family: 'Alice', sans-serif !important;
+  font-size: 1em;
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+.calendar-controls .calendar-filters button:hover {
+  background-color: #a50000;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+}
+
+/* --- List View Logic --- */
+.calendar-container:not(.sidebar-widget) div.calendar-wrapper {
+    max-width: 450px;
+    margin: 0 auto;
+}
+@media (min-width: 1001px) {
+    .calendar-container div.calendar-wrapper {
+        min-height: 500px;
+    }
+}
+
+/* --- Sidebar Widget Logic --- */
+.calendar-container.sidebar-widget {
+    width: 350px !important;
+    max-width: 100%;
+    margin: 0 auto;
+    border: 1px solid #ddd;
+    padding: 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.sidebar-widget .calendar-controls {
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 15px;
+}
+.sidebar-widget .calendar-quick-nav,
+.sidebar-widget .calendar-filters {
+    width: 100%;
+    justify-content: center;
+}
+.sidebar-widget .calendar-quick-nav {
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+/* --- Responsive Calendar (Mobile List View) --- */
+@media (max-width: 1000px) {
+    .calendar-container {
+        width: 100% !important;
+        max-width: 450px !important;
+    }
+    .calendar-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
+    }
+    .calendar-wrapper thead {
+        display: none;
+    }
+    .calendar-wrapper,
+    .calendar-wrapper tbody,
+    .calendar-wrapper tr,
+    .calendar-wrapper td {
+        display: block;
+    }
+    .calendar-wrapper {
+        border: none;
+    }
+    .calendar-wrapper td {
+        display: none;
+    }
+    .calendar-wrapper td.has-events {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: #f7f7f7;
+        height: auto;
+        padding: 0;
+    }
+    .day-number {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 15px;
+        border-bottom: 1px solid #ddd;
+        font-size: 1.4em;
+        font-weight: bold;
+    }
+    .day-number .day-name {
+        display: block;
+        font-weight: bold;
+        font-size: 1em;
+        text-transform: uppercase;
+        color: #555;
+    }
+    .calendar-wrapper td.added-day .day-number strong {
+        color: #ba0000;
+    }
+    .day-events-container {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        padding: 10px;
+    }
+    .event-box {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        min-height: 40px;
+        padding: 8px 12px;
+    }
+    .event-box .event-title {
+        order: 2;
+        text-align: right;
+        font-size: 1em;
+    }
+    .event-box .event-time {
+        order: 1;
+        text-align: left;
+        font-size: 1.1em;
+    }
+    .event-box .event-title br {
+        display: none;
+    }
+    .view-switcher {
+        display: none !important;
+    }
+    .modal-hidden-content {
+        display: none !important;
+    }
+}
+
+/* ===================================================================
+   SECTION 16: CALENDAR MODAL (POP-UP)
+   =================================================================== */
+
+.modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(0, 0, 0, 0.75);
+    z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-wrapper {
+    position: relative; background-color: #fff; border-radius: 8px;
+    padding: 30px; max-width: 500px; width: 100%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+.modal-close-button {
+    position: absolute; top: 10px; right: 15px; background: none; border: none;
+    font-size: 2.5em; color: #888; cursor: pointer; line-height: 1;
+}
+.modal-close-button:hover { color: #000; }
+
+.modal-play-title {
+    text-align: center; font-size: 1.8em; margin-top: 0;
+    margin-bottom: 25px; line-height: 1.2;
+}
+.modal-play-title a { color: inherit; text-decoration: none; }
+.modal-play-title a:hover { color: #ba0000; text-decoration: underline; }
+
+.play-modal-layout { display: flex; gap: 25px; align-items: flex-start; }
+.modal-poster { width: 200px; flex-shrink: 0; }
+.modal-poster img { width: 100%; height: auto; display: block; border-radius: 4px; }
+.modal-details { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+.modal-details h2 { font-size: 1.1em; margin: 0; line-height: 1.3; }
+.modal-details h2 strong { font-size: 0.8em; text-transform: uppercase; color: #555; }
+.modal-details h2 a { color: #ba0000; text-decoration: none; }
+.modal-details h2 a:hover { text-decoration: underline; }
+
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    gap: 20px;
+}
+.modal-actions .menu-red-button {
+    margin: 0;
+}
+.modal-actions .menu-red-button a {
+    padding: 12px 28px;
+    font-size: 1.1em;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+.modal-actions .add-to-calendar-link {
+    border: 2px solid #ba0000;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-weight: bold;
+    color: #ba0000;
+    text-decoration: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+.modal-actions .add-to-calendar-link:hover { background-color: #ba0000; color: #fff; }
+
+.event-modal-layout { display: flex; flex-direction: column; gap: 10px; }
+.event-modal-layout h2 { font-size: 1.5em; margin: 0; }
+.event-modal-layout p { margin: 0; line-height: 1.5; }
+.event-modal-layout .add-to-calendar-link {
+    display: inline-block; margin-top: 15px; font-weight: bold;
+    color: #555; text-decoration: none;
+}
+
+/* ===================================================================
+   SECTION 17: SINGLE PLAY CALENDAR (GRID BLOCK)
+   =================================================================== */
+
+/* --- Base / Desktop Styles --- */
+.single-play-calendar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    width: fit-content;
+    margin: 2em auto;
+}
+
+.spc-item.spc-year,
+.spc-item.spc-info-box {
+    grid-column: 1 / -1;
+}
+
+.spc-item.spc-button,
+.spc-item.spc-info-box {
+    padding: 0.75em 1.2em;
+    text-align: center;
+    border-radius: 4px;
+    border: 1px solid #b8c4af;
+    font-weight: bold;
+    line-height: 1.4;
+}
+
+.spc-item.spc-year {
+    font-size: 3em;
+    font-weight: bold;
+    text-align: center;
+    line-height: 1;
+    margin-bottom: 0.25em;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    background: none !important;
+}
+
+.spc-item.cancelled {
+    background-color: #e0e0e0 !important;
+    color: #888 !important;
+    text-decoration: line-through;
+}
+
+.play-calendar-table .play-calendar-info-box,
+.spc-item.spc-info-box {
+    background-color: #c0cfb2;
+    color: #222;
+}
+
+.spc-item.spc-button {
+    white-space: nowrap;
+}
+
+/* --- Mobile Adjustments --- */
+@media (max-width: 600px) {
+    .single-play-calendar {
+        width: 95%; 
+    }
+    .spc-item.spc-year {
+        font-size: 2.2em; 
+    }
+    .spc-item.spc-button,
+    .spc-item.spc-info-box {
+        padding: 0.7em 0.5em; 
+        font-size: 0.9rem; 
+    }
+}
+
+/* ===================================================================
+   SECTION 18: HORIZONTAL EVENTS SCROLLER
+   =================================================================== */
+
+.horizontal-scroller-container {
+    width: 100% !important;
+    max-width: none !important;
+    position: relative;
+    margin: 2em 0;
+}
+
+.horizontal-scroller {
+    position: relative;
+    padding: 0 10px;
+}
+.scroller-arrow {
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 10;
+    background-color: rgba(255, 255, 255, 0.9); border: 1px solid #ccc;
+    border-radius: 50%; width: 45px; height: 45px; font-size: 24px;
+    font-weight: bold; color: #333; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; opacity: 0;
+    visibility: hidden; transition: all 0.3s ease;
+}
+.horizontal-scroller:hover .scroller-arrow { opacity: 1; visibility: visible; }
+.scroller-arrow:hover { background-color: #ba0000; border-color: #ba0000; color: #fff; }
+.scroller-arrow--prev { left: -15px; }
+.scroller-arrow--next { right: -15px; }
+.scroller-arrow:disabled {
+    opacity: 0.2 !important; cursor: not-allowed; background-color: #f0f0f0;
+    color: #999; border-color: #ccc;
+}
+
+.scroller-viewport {
+    overflow-x: hidden;
+    overflow-y: visible;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+.scroller-wrapper {
+    display: flex;
+    --scroller-gap: 20px;
+    gap: var(--scroller-gap);
+}
+
+.scroller-item {
+    flex: 0 0 calc((100% - (4 * var(--scroller-gap))) / 5);
+    height: 275px;
+    border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    display: flex; flex-direction: column; overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.scroller-item:not(.scroller-item--more):hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+.scroller-item-link {
+    text-decoration: none; color: inherit; display: flex; flex-direction: column;
+    flex-grow: 1;
+    overflow: hidden;
+}
+.scroller-item-date {
+    padding: 15px; font-size: 1.2em; font-weight: bold; text-align: center;
+    background-color: #a7b59a; color: #222;
+    border-bottom: 2px solid rgba(0,0,0,0.1);
+}
+.scroller-item-details {
+    padding: 15px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    justify-content: space-between;
+}
+.scroller-item-title {
+    font-size: 1.3em;
+    line-height: 1.3;
+    margin: 0;
+}
+.scroller-item-time {
+    font-size: 1.1em;
+    font-weight: 500;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+/* --- "More Events" Button --- */
+.scroller-item--more {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    transition: none;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    text-decoration: none;
+    color: #ba0000;
+}
+.scroller-item--more:hover {
+    background-color: transparent;
+    border: none;
+}
+.scroller-item--more span {
+    font-size: 1.8em;
+    font-weight: bold;
+    text-transform: uppercase;
+    line-height: 1.2;
+    transition: color 0.2s ease;
+}
+.scroller-item--more:hover span {
+    color: #000000;
+}
+
+/* --- Scroll-Featured View Specifics --- */
+.scroll-featured-view .scroller-item {
+    flex-basis: calc((100% - (1 * var(--scroller-gap))) / 2);
+}
+.scroll-featured-view .scroller-item-link,
+.scroll-featured-view .scroller-item-link:hover,
+.scroll-featured-view .scroller-item-link:visited {
+    color: inherit !important;
+    text-decoration: none !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+.scroll-featured-view .scroller-card-body {
+    padding: 0; flex-grow: 1; display: flex;
+    align-items: center; overflow: hidden;
+    position: relative;
+}
+.scroll-featured-view .scroller-poster-column {
+    flex-shrink: 0; height: 150px; width: auto; padding-left: 20px;
+}
+.scroll-featured-view .scroller-poster-column img {
+    height: 100%; width: auto; display: block; border-radius: 4px;
+}
+.scroll-featured-view .scroller-item-details {
+    padding: 20px; display: flex; flex-direction: column;
+    justify-content: center; min-width: 180px;
+}
+.scroll-featured-view .scroller-card-body:not(.has-poster) .scroller-item-details {
+    width: 100%; text-align: center;
+}
+.scroll-featured-view .has-poster .scroller-item-details {
+    text-align: left; justify-content: flex-start; gap: 12px;
+}
+.scroll-featured-view .scroller-play-details {
+    display: flex; flex-direction: column; gap: 10px;
+}
+.scroll-featured-view .detail-item {
+    line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.scroll-featured-view .detail-label {
+    display: inline; font-size: 0.9em; margin-right: 0.5em;
+}
+.scroll-featured-view .detail-name {
+    display: inline; font-size: 1em; font-weight: bold;
+}
+.scroll-featured-view .scroller-play-dates,
+.scroll-featured-view .scroller-item-time {
+    font-size: 0.95em; font-weight: bold; line-height: 1.3;
+}
+.scroll-featured-view .play-show-time {
+    display: block; padding-top: 2px;
+}
+
+/* --- Mobile Responsiveness for Scroller (CORRECTED) --- */
+@media (max-width: 1000px) {
+    /* FIX: Remove outer padding which conflicts with centering calculations. */
+    .horizontal-scroller {
+        padding: 0;
+    }
+
+    .scroller-arrow { display: none; }
+    .scroller-viewport {
+       overflow-x: auto;
+       -webkit-overflow-scrolling: touch;
+       scroll-snap-type: x mandatory;
+       scrollbar-width: none;
+    }
+    .scroller-viewport::-webkit-scrollbar { display: none; }
+    
+    /* FIX: Correct padding calculation for a 250px centered card. */
+    .scroller-wrapper {
+        padding: 0 calc((100% - 250px) / 2);
+    }
+    .scroller-item {
+        flex: 0 0 250px;
+        scroll-snap-align: center;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Styles for the larger scroll-featured cards */
+    .scroll-featured-view .scroller-item {
+        flex-basis: 320px !important;
+    }
+    /* FIX: Correct padding calculation for a 320px centered card. */
+    .scroll-featured-view .scroller-wrapper {
+        padding: 0 calc((100% - 320px) / 2);
+    }
+
+    /* Layout adjustments within the card */
+    .scroll-featured-view .scroller-card-body {
+        padding-bottom: 35px;
+    }
+    .scroll-featured-view .detail-label,
+    .scroll-featured-view .detail-name {
+        display: block; white-space: normal;
+    }
+    .scroll-featured-view .detail-label {
+        font-size: 0.8em; margin-bottom: 1px;
+    }
+    .scroll-featured-view .detail-item {
+        margin-bottom: 5px;
+    }
+    .scroll-featured-view .play-date-ranges {
+        display: none;
+    }
+    .scroll-featured-view .scroller-play-dates {
+        position: absolute; bottom: 15px; left: 0;
+        right: 0; text-align: center; padding: 0;
+        font-size: 1em;
+    }
+    .scroll-featured-view .play-show-time {
+        display: inline !important;
+    }
+}
+
+/* ===================================================================
+   SECTION 18.1: NARROW MOBILE OVERRIDES (REVISED)
+   - For screens 360px or less, hides the poster for a cleaner layout.
+   =================================================================== */
+
+@media (max-width: 360px) {
+
+    /* 1. Hide the entire poster column. */
+    .scroll-featured-view .scroller-poster-column {
+        display: none;
+    }
+    
+    /* 2. Make the details section fill the full width of the card. */
+    .scroll-featured-view .scroller-item-details {
+        width: 100%;
+        text-align: center; /* Center the text now that it's full-width */
+    }
+    
+    /* OPTIONAL: Adjust card width now that it's simpler. */
+    /* This can make the text a bit more readable. */
+    .scroll-featured-view .scroller-item {
+        flex-basis: 280px !important; 
+    }
+    .scroll-featured-view .scroller-wrapper {
+        padding: 0 calc((100% - 280px) / 2);
+    }
+}
+
+
+
+
+@media (max-width: 360px) {
+
+    /* --- 1. Drastically shrink the card's width --- */
+    /* A 240px card will fit inside a 288px viewport that has padding. */
+    .scroll-featured-view .scroller-item {
+        flex-basis: 220px !important;
+    }
+
+    /* --- 2. Re-center the new, much smaller card --- */
+    .scroll-featured-view .scroller-wrapper {
+        padding: 0 calc((100% - 220px) / 2);
+    }
+
+    /* --- 3. Hide the poster (this is a good decision and stays) --- */
+    .scroll-featured-view .scroller-poster-column {
+        display: none;
+    }
+
+    /* --- 4. Make the text content smaller to fit the new card size --- */
+    .scroll-featured-view .scroller-item-details {
+        width: 100%;
+        text-align: center;
+        padding: 15px; /* Reduce padding from 20px */
+        gap: 8px; /* Reduce gap from 12px */
+    }
+
+    .scroll-featured-view .scroller-item-title {
+        font-size: 1.15em; /* Reduce font size from 1.3em */
+    }
+
+    .scroll-featured-view .detail-name {
+        font-size: 0.9em; /* Reduce font size from 1em */
+    }
+
+}
