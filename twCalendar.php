@@ -52,7 +52,7 @@ function tw_calendar_enqueue_assets() {
 	
 	    // Enqueue the modal window script
     wp_enqueue_script(
-        'tw-calendar-scroller', // A unique name (handle) for our script
+        'tw-calendar-modal-window', // A unique name (handle) for our script
         plugin_dir_url( __FILE__ ) . 'assets/js/modal_window.js', // The full URL to the script
         array(), // An array of script handles this script depends on (e.g., 'jquery')
         '1.0.0', // The version of your script
