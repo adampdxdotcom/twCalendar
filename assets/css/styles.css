@@ -640,32 +640,6 @@ a.event-link, a.event-link:hover { text-decoration: none; color: inherit; }
 
 @media (max-width: 360px) {
 
-    /* 1. Hide the entire poster column. */
-    .scroll-featured-view .scroller-poster-column {
-        display: none;
-    }
-    
-    /* 2. Make the details section fill the full width of the card. */
-    .scroll-featured-view .scroller-item-details {
-        width: 100%;
-        text-align: center; /* Center the text now that it's full-width */
-    }
-    
-    /* OPTIONAL: Adjust card width now that it's simpler. */
-    /* This can make the text a bit more readable. */
-    .scroll-featured-view .scroller-item {
-        flex-basis: 280px !important; 
-    }
-    .scroll-featured-view .scroller-wrapper {
-        padding: 0 calc((100% - 280px) / 2);
-    }
-}
-
-
-
-
-@media (max-width: 360px) {
-
     /* --- 1. Drastically shrink the card's width --- */
     /* A 240px card will fit inside a 288px viewport that has padding. */
     .scroll-featured-view .scroller-item {
