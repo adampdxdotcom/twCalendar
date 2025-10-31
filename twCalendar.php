@@ -19,3 +19,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once plugin_dir_path( __FILE__ ) . 'includes/shortcode-router.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/cal-functions.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/play_date_list.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/view_grid_list.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/view_scroll.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/view_scroll_featured.php';
+
+
+
