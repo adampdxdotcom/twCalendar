@@ -18,4 +18,4 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Main plugin code will go here...
+require_once plugin_dir_path( __FILE__ ) . 'includes/shortcode-router.php';
