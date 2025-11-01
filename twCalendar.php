@@ -25,6 +25,7 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/view_grid_list.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/view_scroll.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/view_scroll_featured.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/view_dates.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/audition_dates.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/settings.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/cache_invalidation.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/single_play_calendar.php';
