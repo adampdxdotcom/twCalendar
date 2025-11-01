@@ -28,6 +28,7 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/view_dates.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/settings.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/cache_invalidation.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/single_play_calendar.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/ical_handler.php';
 
 
 /** Enqueue scripts and styles. */
