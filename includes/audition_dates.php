@@ -1,3 +1,9 @@
+<?php
+// If this file is called directly, abort.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Creates the [audition_dates] shortcode.
  * Usage: [audition_dates id="123"] (where 123 is a Play ID)
