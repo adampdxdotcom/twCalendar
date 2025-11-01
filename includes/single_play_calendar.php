@@ -24,7 +24,6 @@ if ( ! function_exists( 'my_single_play_calendar_shortcode' ) ) {
             return '<!-- [single_play_calendar] - Play pod not found. -->';
         }
 
-        // --- Data Fetching (Unchanged) ---
         $options = get_option( 'my_calendar_settings', [] );
         $global_colors = $options['global'] ?? [];
         $spc_year_text_color = $global_colors['spc_year_text_color'] ?? '#333333';
@@ -78,35 +77,32 @@ if ( ! function_exists( 'my_single_play_calendar_shortcode' ) ) {
                     if ( in_array( $date->format( 'N' ), [ 4, 5, 6 ] ) ) { $all_events[] = [ 'date' => $date, 'type' => 'performance' ]; }
                 }
             }
+            
+            // --- MODIFIED: Using robust validation for Matinees ---
             if (is_array($matinee_dates_raw)) {
                 foreach ( $matinee_dates_raw as $matinee_str ) {
-                    if ( empty(trim($matinee_str)) ) continue;
+                    $matinee_str = trim((string) $matinee_str);
+                    if ($matinee_str === '' || $matinee_str === '0000-00-00 00:00:00' || strtotime($matinee_str) <= 0) continue;
                     $all_events[] = [ 'date' => new DateTime( $matinee_str ), 'type' => 'matinee' ];
                 }
             }
 
-            // =============================================================
-            // --- THIS IS THE CORRECTED LOGIC, BASED ON YOUR WORKING EXAMPLE ---
-            // =============================================================
+            // --- MODIFIED: Using robust validation for Added Dates ---
             if ( ! empty( $additional_dates_raw ) && is_array( $additional_dates_raw ) ) {
                 foreach ( $additional_dates_raw as $added_date_str ) {
-                    // Rigorous check for empty/invalid values
                     $added_date_str = trim( (string) $added_date_str );
                     if ( $added_date_str === '' || $added_date_str === '0000-00-00 00:00:00' || strtotime( $added_date_str ) <= 0 ) continue;
                     
                     try {
                         $added_date_obj = new DateTime( $added_date_str );
-                        // This is an off-day show. Create its own unique, full-width event.
                         $all_events[] = [
-                            'date' => $added_date_obj, // The date is used for sorting
+                            'date' => $added_date_obj,
                             'type' => 'offday_added',
                             'text' => 'Added Date:<br><span style="color: red;">' . esc_html($added_date_obj->format('M j')) . '</span>'
                         ];
                     } catch ( Exception $e ) { continue; }
                 }
             }
-            // =============================================================
-
         } catch ( Exception $e ) { return '<!-- Calendar Error: Invalid date format. -->'; }
 
         usort( $all_events, function( $a, $b ) { return $a['date'] <=> $b['date']; });
@@ -132,11 +128,7 @@ if ( ! function_exists( 'my_single_play_calendar_shortcode' ) ) {
                 $unique_dates[$date_key]['types'][] = $event['type'];
                 if (isset($event['text'])) { $unique_dates[$date_key]['text'] = $event['text']; }
             }
-
-            // Sort unique dates chronologically before rendering
-            uksort($unique_dates, function($a, $b) {
-                return strtotime($a) <=> strtotime($b);
-            });
+            uksort($unique_dates, function($a, $b) { return strtotime($a) <=> strtotime($b); });
 
             foreach ($unique_dates as $date_key => $data) {
                 $types = $data['types'];
@@ -152,7 +144,7 @@ if ( ! function_exists( 'my_single_play_calendar_shortcode' ) ) {
                 } elseif (in_array('offday_added', $types)) {
                      $css_classes[] = 'spc-info-box';
                      $style = 'background-color:'.esc_attr($spc_info_bg_color).'; color:'.esc_attr($spc_info_text_color).';';
-                     $display_text = $data['text']; // Use the pre-formatted text
+                     $display_text = $data['text'];
                 } else {
                     $css_classes[] = 'spc-button';
                     $style = 'background-color:'.esc_attr($spc_date_bg_color).'; color:'.esc_attr($spc_date_text_color).';';
