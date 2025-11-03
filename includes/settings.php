@@ -12,16 +12,15 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
 
     // --- 1. INITIALIZATION ---
     function my_calendar_settings_page_init() {
-        // MODIFIED: We now use our new, consolidated menu function.
         add_action( 'admin_menu', 'my_calendar_create_admin_menu' );
         add_action( 'admin_init', 'my_calendar_register_settings_save_handler' );
         add_action( 'admin_enqueue_scripts', 'my_calendar_admin_enqueue_scripts' );
-        // MODIFIED: The hook name for the settings page footer script has changed.
-        add_action( 'admin_footer-tw-calendar_page_calendar-settings', 'my_calendar_settings_page_javascript' );
+        // MODIFIED: The hook name for the settings page is now simpler.
+        add_action( 'admin_footer-event_page_calendar-settings', 'my_calendar_settings_page_javascript' );
     }
     my_calendar_settings_page_init();
 
-    // --- 2. GETTER FOR DEFAULT COLORS (MASTER TEMPLATE) --- (Unchanged)
+    // --- 2. GETTER FOR DEFAULT COLORS --- (Unchanged)
     function my_calendar_get_default_colors() {
         return [
             'default_bg_color' => '#f7f7f7', 'default_text_color' => '#000000',
@@ -36,43 +35,44 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         ];
     }
 
-    // --- 3. REGISTER ADMIN MENU PAGE (NEW CONSOLIDATED FUNCTION) ---
+    // --- 3. REGISTER ADMIN MENU PAGE (CORRECTED STRUCTURE) ---
     function my_calendar_create_admin_menu() {
-        // Define our new parent menu slug.
-        $parent_slug = 'tw-calendar-main';
+        // --- THE FIX IS HERE ---
+        // The parent slug is now the ACTUAL page for "All Events".
+        $parent_slug = 'edit.php?post_type=event';
 
-        // Add the top-level menu page.
+        // Add the top-level menu page. We set its slug to the "All Events" page.
         add_menu_page(
-            'TW Calendar',                  // Page title
-            'TW Calendar',                  // Menu title
-            'edit_posts',                   // Capability
-            $parent_slug,                   // Menu slug
-            'my_calendar_redirect_to_all_events', // A helper function to redirect to the first submenu item
-            'dashicons-calendar-alt',       // The nifty icon!
-            27                              // Position in the menu
+            'TW Calendar',
+            'TW Calendar',
+            'edit_posts',
+            $parent_slug,                   // The slug IS the "All Events" page.
+            '',                             // No callback function needed.
+            'dashicons-calendar-alt',
+            27
         );
 
-        // Add the "All Events" submenu page.
+        // Add the "All Events" submenu page. This is required to get the title right.
         add_submenu_page(
             $parent_slug,
             'All Events',
             'All Events',
             'edit_posts',
-            'edit.php?post_type=event'
+            $parent_slug // The slug is the same as the parent.
         );
 
-        // Add the "Add New Event" submenu page.
+        // Add the "Add New" submenu page under the same parent.
         add_submenu_page(
             $parent_slug,
             'Add New Event',
-            'Add New', // Changed to "Add New" to match standard WP menu convention
+            'Add New',
             'edit_posts',
             'post-new.php?post_type=event'
         );
         
-        // Add our existing "Settings" page under the new parent.
+        // Add our existing "Settings" page under the same parent.
         add_submenu_page(
-            $parent_slug,                   // MODIFIED: Uses our new parent slug
+            $parent_slug,
             'Calendar Settings',
             'Settings',
             'manage_options',
@@ -81,24 +81,18 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         );
     }
     
-    /**
-     * Helper function to make the top-level menu link go to "All Events".
-     */
-    function my_calendar_redirect_to_all_events() {
-        // This function is just a placeholder because add_menu_page requires a callback.
-        // WordPress will automatically redirect to the first submenu page ('edit.php?post_type=event').
-    }
-
+    // REMOVED the unnecessary redirect function.
 
     // --- 4. ENQUEUE SCRIPTS ---
     function my_calendar_admin_enqueue_scripts( $hook ) {
-        // MODIFIED: The hook name for our settings page has changed because it's under a new parent.
-        if ( 'tw-calendar_page_calendar-settings' !== $hook ) return;
+        // MODIFIED: The hook name is now 'event_page_calendar-settings' again.
+        if ( 'event_page_calendar-settings' !== $hook ) return;
         wp_enqueue_style( 'wp-color-picker' );
         wp_enqueue_script( 'wp-color-picker' );
     }
 
-    // --- 5. RENDER THE SETTINGS PAGE HTML ---
+    // --- (All remaining functions are unchanged) ---
+
     function my_calendar_render_settings_page() {
         if ( ! current_user_can( 'manage_options' ) ) return;
         
@@ -171,7 +165,6 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         <?php
     }
 
-    // --- 6. HELPER TO RENDER COLOR FIELDS ---
     function my_calendar_render_color_fields_subset( $group, $values, $keys_to_render, $heading = null, $id = null, $is_template = false ) {
         $defaults = my_calendar_get_default_colors();
         $all_fields = [
@@ -203,7 +196,6 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         if ($is_template) echo '</div>';
     }
     
-    // --- 7. JAVASCRIPT ---
     function my_calendar_settings_page_javascript() {
         ?>
         <script>
@@ -279,12 +271,10 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         <?php
     }
 
-    // --- 8. SAVE & SANITIZE ---
     function my_calendar_register_settings_save_handler() {
         register_setting( 'my_calendar_settings_group', 'my_calendar_settings', 'my_calendar_sanitize_settings' );
     }
     function my_calendar_sanitize_settings( $input ) {
-        // --- THIS IS THE CRITICAL FIX ---
         if ( function_exists('my_project_invalidate_calendar_cache') ) {
             my_project_invalidate_calendar_cache();
         }
@@ -293,7 +283,7 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         $defaults = my_calendar_get_default_colors();
         $color_keys = array_keys($defaults);
 
-        if ( !empty( $input['global'] ) && is_array( $input['global'] ) ) {
+        if ( !empty( $input['global'] ) && is_array( 'my_calendar_settings_page' ) ) {
             $sanitized_output['global'] = [];
             foreach ( $color_keys as $key ) {
                 if ( isset( $input['global'][$key] ) ) {
