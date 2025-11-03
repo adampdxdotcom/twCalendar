@@ -21,6 +21,9 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         add_action( 'pre_get_posts', 'my_calendar_merge_post_types_in_list' );
         add_filter( 'manage_event_posts_columns', 'my_calendar_add_type_column' );
         add_action( 'manage_event_posts_custom_column', 'my_calendar_render_type_column', 10, 2 );
+
+        // Hook to add the dashboard above the list table
+        add_filter( 'views_edit-event', 'my_calendar_add_dashboard_to_events_list' );
     }
     my_calendar_settings_page_init();
 
@@ -57,6 +60,17 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
             'calendar-settings',
             'my_calendar_render_settings_page'
         );
+    }
+
+    /**
+     * Renders a shortcode-based dashboard at the top of the Events list page.
+     */
+    function my_calendar_add_dashboard_to_events_list( $views ) {
+        echo '<div id="tw-calendar-dashboard-featured" style="margin-bottom: 20px;">';
+        echo '<h2>Upcoming</h2>';
+        echo do_shortcode('[monthly_events_calendar view="scroll-featured"]');
+        echo '</div>';
+        return $views;
     }
 
     /**
