@@ -46,16 +46,22 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
                 font-size: 28px;
                 font-family: 'RocaOne', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
             }
-            /* Adjust spacing for the moved button */
-            .post-type-event .page-title-action {
-                margin-left: 10px;
+            /* Hide the original button before it's moved to prevent a "flash" */
+            .wp-heading-inline + .page-title-action {
+                display: none;
+            }
+            /* Style the moved button for proper alignment in the tablenav bar */
+            .tablenav.top .page-title-action {
+                display: inline-block;
+                float: left;
+                margin: 1px 10px 0 0;
             }
         </style>
         <script>
             // Use jQuery to move the 'Add New' button to the correct location
             jQuery(document).ready(function($) {
-                // Find the "Add New" button and move it after the filter bar
-                $('.wrap .page-title-action').insertAfter('.subsubsub');
+                // Find the "Add New" button and move it before the "Bulk actions" dropdown
+                $('.wrap .page-title-action').insertBefore('.tablenav.top .alignleft.actions.bulkactions');
             });
         </script>
         <?php
