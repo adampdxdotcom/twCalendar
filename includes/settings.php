@@ -16,6 +16,11 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         add_action( 'admin_init', 'my_calendar_register_settings_save_handler' );
         add_action( 'admin_enqueue_scripts', 'my_calendar_admin_enqueue_scripts' );
         add_action( 'admin_footer-event_page_calendar-settings', 'my_calendar_settings_page_javascript' );
+
+        // Hooks for merging post types into the list view
+        add_action( 'pre_get_posts', 'my_calendar_merge_post_types_in_list' );
+        add_filter( 'manage_event_posts_columns', 'my_calendar_add_type_column' );
+        add_action( 'manage_event_posts_custom_column', 'my_calendar_render_type_column', 10, 2 );
     }
     my_calendar_settings_page_init();
 
@@ -34,31 +39,57 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         ];
     }
 
-    // --- 3. REGISTER ADMIN MENU PAGE (FINAL CORRECTED STRUCTURE) ---
+    // --- 3. REGISTER ADMIN MENU PAGE ---
     function my_calendar_create_admin_menu() {
         global $menu;
-
-        // Loop through the main menu array to find the 'Events' menu item.
         foreach ( $menu as $key => $item ) {
-            // The slug for the 'Events' CPT menu is 'edit.php?post_type=event'.
             if ( 'edit.php?post_type=event' === $item[2] ) {
-                // Change the name from 'Events' to 'TW Calendar'.
                 $menu[$key][0] = 'TW Calendar';
-                // Change the icon from the default pushpin to the calendar icon.
                 $menu[$key][6] = 'dashicons-calendar-alt';
-                break; // Stop looping once we've found and changed it.
+                break;
             }
         }
-        
-        // Now, add our "Settings" page as a submenu to the REAL 'Events' menu.
         add_submenu_page(
-            'edit.php?post_type=event', // The parent is the real 'Events' menu.
+            'edit.php?post_type=event',
             'Calendar Settings',
             'Settings',
             'manage_options',
             'calendar-settings',
             'my_calendar_render_settings_page'
         );
+    }
+
+    /**
+     * Modifies the main query on the 'event' post type list page to also include 'play' posts.
+     */
+    function my_calendar_merge_post_types_in_list( $query ) {
+        if ( is_admin() && $query->is_main_query() && isset( $query->query_vars['post_type'] ) && $query->query_vars['post_type'] === 'event' ) {
+            $query->set( 'post_type', array( 'event', 'play' ) );
+        }
+    }
+
+    /**
+     * Adds a "Type" column to the list table header.
+     */
+    function my_calendar_add_type_column( $columns ) {
+        $new_columns = [];
+        foreach ( $columns as $key => $title ) {
+            $new_columns[$key] = $title;
+            if ( 'title' === $key ) {
+                $new_columns['post_type'] = 'Type';
+            }
+        }
+        return $new_columns;
+    }
+
+    /**
+     * Renders the content for the custom "Type" column.
+     */
+    function my_calendar_render_type_column( $column_name, $post_id ) {
+        if ( 'post_type' === $column_name ) {
+            $post_type_obj = get_post_type_object( get_post_type( $post_id ) );
+            echo esc_html( $post_type_obj->labels->singular_name );
+        }
     }
 
     // --- 4. ENQUEUE SCRIPTS ---
