@@ -24,8 +24,30 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
 
         // Hook to add the dashboard above the list table
         add_filter( 'views_edit-event', 'my_calendar_add_dashboard_to_events_list' );
+        
+        // Hook for custom admin styles on the list page
+        add_action( 'admin_head', 'my_calendar_dashboard_styles' );
     }
     my_calendar_settings_page_init();
+    
+    /**
+     * Adds custom CSS to the admin head for the main Events/Plays list page.
+     */
+    function my_calendar_dashboard_styles() {
+        $screen = get_current_screen();
+        // Target only the main list table for 'event' post types.
+        if ( ! $screen || 'edit-event' !== $screen->id ) {
+            return;
+        }
+        ?>
+        <style>
+            .post-type-event .wp-heading-inline {
+                font-size: 28px;
+                font-family: 'RocaOne', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            }
+        </style>
+        <?php
+    }
 
     // --- 2. GETTER FOR DEFAULT COLORS ---
     function my_calendar_get_default_colors() {
