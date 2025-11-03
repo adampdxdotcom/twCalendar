@@ -30,6 +30,7 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/settings.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/cache_invalidation.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/single_play_calendar.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/ical_handler.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/event-editor.php';
 
 
 /** Enqueue scripts and styles. */
