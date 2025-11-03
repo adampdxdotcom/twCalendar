@@ -46,6 +46,15 @@ function tw_calendar_enqueue_admin_assets( $hook_suffix ) {
             array(),
             '1.0.0'
         );
+
+        // ALSO enqueue the scroller script, since the shortcode needs it.
+        wp_enqueue_script(
+            'tw-calendar-scroller', // Use the same handle as the front-end
+            plugin_dir_url( __FILE__ ) . 'assets/js/scroller.js',
+            array(), // This script has no dependencies like jQuery
+            '1.0.0',
+            true     // Load in the footer
+        );
     }
 }
 add_action( 'admin_enqueue_scripts', 'tw_calendar_enqueue_admin_assets' );
