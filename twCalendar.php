@@ -33,7 +33,25 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/ical_handler.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/event-editor.php';
 
 
-/** Enqueue scripts and styles. */
+/**
+ * Enqueue assets for the admin area.
+ * This function will load our front-end stylesheet on our custom dashboard page.
+ */
+function tw_calendar_enqueue_admin_assets( $hook_suffix ) {
+    // We only want to load the calendar styles on the main 'event' list page, where our dashboard is.
+    if ( 'edit.php' === $hook_suffix && 'event' === get_current_screen()->post_type ) {
+        wp_enqueue_style(
+            'tw-calendar-styles', // Use the same handle as the front-end
+            plugin_dir_url( __FILE__ ) . 'assets/css/styles.css', // The path to the stylesheet
+            array(),
+            '1.0.0'
+        );
+    }
+}
+add_action( 'admin_enqueue_scripts', 'tw_calendar_enqueue_admin_assets' );
+
+
+/** Enqueue scripts and styles for the front-end. */
 function tw_calendar_enqueue_assets() {
 	
     // Enqueue the main stylesheet
