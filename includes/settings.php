@@ -12,14 +12,16 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
 
     // --- 1. INITIALIZATION ---
     function my_calendar_settings_page_init() {
-        add_action( 'admin_menu', 'my_calendar_add_settings_page' );
+        // MODIFIED: We now use our new, consolidated menu function.
+        add_action( 'admin_menu', 'my_calendar_create_admin_menu' );
         add_action( 'admin_init', 'my_calendar_register_settings_save_handler' );
         add_action( 'admin_enqueue_scripts', 'my_calendar_admin_enqueue_scripts' );
-        add_action( 'admin_footer-event_page_calendar-settings', 'my_calendar_settings_page_javascript' );
+        // MODIFIED: The hook name for the settings page footer script has changed.
+        add_action( 'admin_footer-tw-calendar_page_calendar-settings', 'my_calendar_settings_page_javascript' );
     }
     my_calendar_settings_page_init();
 
-    // --- 2. GETTER FOR DEFAULT COLORS (MASTER TEMPLATE) ---
+    // --- 2. GETTER FOR DEFAULT COLORS (MASTER TEMPLATE) --- (Unchanged)
     function my_calendar_get_default_colors() {
         return [
             'default_bg_color' => '#f7f7f7', 'default_text_color' => '#000000',
@@ -34,14 +36,64 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         ];
     }
 
-    // --- 3. REGISTER ADMIN MENU PAGE ---
-    function my_calendar_add_settings_page() {
-        add_submenu_page( 'edit.php?post_type=event', 'Calendar Settings', 'Settings', 'manage_options', 'calendar-settings', 'my_calendar_render_settings_page' );
+    // --- 3. REGISTER ADMIN MENU PAGE (NEW CONSOLIDATED FUNCTION) ---
+    function my_calendar_create_admin_menu() {
+        // Define our new parent menu slug.
+        $parent_slug = 'tw-calendar-main';
+
+        // Add the top-level menu page.
+        add_menu_page(
+            'TW Calendar',                  // Page title
+            'TW Calendar',                  // Menu title
+            'edit_posts',                   // Capability
+            $parent_slug,                   // Menu slug
+            'my_calendar_redirect_to_all_events', // A helper function to redirect to the first submenu item
+            'dashicons-calendar-alt',       // The nifty icon!
+            27                              // Position in the menu
+        );
+
+        // Add the "All Events" submenu page.
+        add_submenu_page(
+            $parent_slug,
+            'All Events',
+            'All Events',
+            'edit_posts',
+            'edit.php?post_type=event'
+        );
+
+        // Add the "Add New Event" submenu page.
+        add_submenu_page(
+            $parent_slug,
+            'Add New Event',
+            'Add New', // Changed to "Add New" to match standard WP menu convention
+            'edit_posts',
+            'post-new.php?post_type=event'
+        );
+        
+        // Add our existing "Settings" page under the new parent.
+        add_submenu_page(
+            $parent_slug,                   // MODIFIED: Uses our new parent slug
+            'Calendar Settings',
+            'Settings',
+            'manage_options',
+            'calendar-settings',
+            'my_calendar_render_settings_page'
+        );
     }
+    
+    /**
+     * Helper function to make the top-level menu link go to "All Events".
+     */
+    function my_calendar_redirect_to_all_events() {
+        // This function is just a placeholder because add_menu_page requires a callback.
+        // WordPress will automatically redirect to the first submenu page ('edit.php?post_type=event').
+    }
+
 
     // --- 4. ENQUEUE SCRIPTS ---
     function my_calendar_admin_enqueue_scripts( $hook ) {
-        if ( 'event_page_calendar-settings' !== $hook ) return;
+        // MODIFIED: The hook name for our settings page has changed because it's under a new parent.
+        if ( 'tw-calendar_page_calendar-settings' !== $hook ) return;
         wp_enqueue_style( 'wp-color-picker' );
         wp_enqueue_script( 'wp-color-picker' );
     }
