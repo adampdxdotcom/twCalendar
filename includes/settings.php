@@ -159,6 +159,7 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         $options = get_option( 'my_calendar_settings', [] );
         $defaults = my_calendar_get_default_colors();
         $global_colors = wp_parse_args( $options['global'] ?? [], $defaults );
+        $scroll_image_size = $options['global']['scroll_image_size'] ?? 'medium';
         $custom_styles = $options['styles'] ?? [];
         ?>
         <div class="wrap">
@@ -176,7 +177,24 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
                                 <a href="#tab-single-play" class="nav-tab">Single Play Calendar</a>
                                 <a href="#tab-common" class="nav-tab">Common Event Colors</a>
                             </nav>
-                            <div id="tab-scroll" class="tab-content active"><?php my_calendar_render_color_fields_subset( 'global', $global_colors, ['scroll_date_bg_color', 'scroll_date_text_color'], 'Scroll View Specific' ); ?></div>
+                            <div id="tab-scroll" class="tab-content active">
+                                <h3>Scroll View Display</h3>
+                                <table class="form-table">
+                                    <tr>
+                                        <th scope="row"><label for="scroll-image-size">Image Size</label></th>
+                                        <td>
+                                            <select name="my_calendar_settings[global][scroll_image_size]" id="scroll-image-size">
+                                                <option value="thumbnail" <?php selected( $scroll_image_size, 'thumbnail' ); ?>>Thumbnail (150x150)</option>
+                                                <option value="medium" <?php selected( $scroll_image_size, 'medium' ); ?>>Medium (up to 300x300)</option>
+                                                <option value="large" <?php selected( $scroll_image_size, 'large' ); ?>>Large (up to 1024x1024)</option>
+                                                <option value="full" <?php selected( $scroll_image_size, 'full' ); ?>>Full Size (Original)</option>
+                                            </select>
+                                            <p class="description">Select the size of the poster or event image to display in the scroll view.</p>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <?php my_calendar_render_color_fields_subset( 'global', $global_colors, ['scroll_date_bg_color', 'scroll_date_text_color'], 'Scroll View Colors' ); ?>
+                            </div>
                             <div id="tab-grid" class="tab-content"><?php my_calendar_render_color_fields_subset( 'global', $global_colors, ['grid_header_bg_color', 'grid_header_text_color', 'grid_day_cell_bg_color', 'grid_day_number_text_color'], 'Grid View Structure' ); ?></div>
                             <div id="tab-list" class="tab-content"><?php my_calendar_render_color_fields_subset( 'global', $global_colors, ['list_day_cell_bg_color', 'list_day_number_text_color'], 'List View Structure' ); ?></div>
                             <div id="tab-single-play" class="tab-content"><?php my_calendar_render_color_fields_subset( 'global', $global_colors, ['spc_year_text_color', 'spc_dow_bg_color', 'spc_dow_text_color', 'spc_info_bg_color', 'spc_info_text_color', 'spc_date_bg_color', 'spc_date_text_color'], 'Single Play Calendar' ); ?></div>
