@@ -5,7 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // ===================================================================
-// --- CALENDAR SETTINGS PAGE ---
+// --- CALENDAR SETTINGS PAGE & MENU SETUP ---
 // ===================================================================
 
 if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
@@ -15,8 +15,8 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         add_action( 'admin_menu', 'my_calendar_create_admin_menu' );
         add_action( 'admin_init', 'my_calendar_register_settings_save_handler' );
         add_action( 'admin_enqueue_scripts', 'my_calendar_admin_enqueue_scripts' );
-        // MODIFIED: The hook name for the settings page is now simpler.
-        add_action( 'admin_footer-event_page_calendar-settings', 'my_calendar_settings_page_javascript' );
+        // MODIFIED: The hook for the settings page footer script is now correct for our new menu structure.
+        add_action( 'admin_footer-tw-calendar_page_calendar-settings', 'my_calendar_settings_page_javascript' );
     }
     my_calendar_settings_page_init();
 
@@ -35,33 +35,32 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         ];
     }
 
-    // --- 3. REGISTER ADMIN MENU PAGE (CORRECTED STRUCTURE) ---
+    // --- 3. REGISTER ADMIN MENU PAGE (FINAL CORRECTED STRUCTURE) ---
     function my_calendar_create_admin_menu() {
-        // --- THE FIX IS HERE ---
-        // The parent slug is now the ACTUAL page for "All Events".
-        $parent_slug = 'edit.php?post_type=event';
+        // Define a unique slug for our new parent menu. This is our "house".
+        $parent_slug = 'tw-calendar-view';
 
-        // Add the top-level menu page. We set its slug to the "All Events" page.
+        // Add the top-level menu page. Its job is to display the "All Events" list.
         add_menu_page(
-            'TW Calendar',
+            'All Events',
             'TW Calendar',
             'edit_posts',
-            $parent_slug,                   // The slug IS the "All Events" page.
-            '',                             // No callback function needed.
+            $parent_slug,
+            'my_calendar_render_all_events_page', // This new function will display the list table.
             'dashicons-calendar-alt',
             27
         );
 
-        // Add the "All Events" submenu page. This is required to get the title right.
+        // Add "All Events" as the first submenu. WordPress will automatically make it the default.
         add_submenu_page(
             $parent_slug,
             'All Events',
             'All Events',
             'edit_posts',
-            $parent_slug // The slug is the same as the parent.
+            $parent_slug // Points to the same callback as the parent.
         );
 
-        // Add the "Add New" submenu page under the same parent.
+        // Add the "Add New" submenu page under our new parent.
         add_submenu_page(
             $parent_slug,
             'Add New Event',
@@ -70,7 +69,7 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
             'post-new.php?post_type=event'
         );
         
-        // Add our existing "Settings" page under the same parent.
+        // Add our "Settings" page under the new parent.
         add_submenu_page(
             $parent_slug,
             'Calendar Settings',
@@ -81,18 +80,47 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         );
     }
     
-    // REMOVED the unnecessary redirect function.
+    /**
+     * NEW: This is the crucial callback function that renders the "All Events" list table.
+     * This makes our menu page legitimate and solves the permissions error.
+     */
+    function my_calendar_render_all_events_page() {
+        // We need to load the class that handles the list table.
+        require_once( ABSPATH . 'wp-admin/includes/class-wp-posts-list-table.php' );
+        
+        // Prepare the list table for the 'event' post type.
+        $list_table = new WP_Posts_List_Table( [ 'screen' => 'edit-event' ] );
+        $list_table->prepare_items();
+        ?>
+        <div class="wrap">
+            <h1 class="wp-heading-inline">Events</h1>
+            <a href="post-new.php?post_type=event" class="page-title-action">Add New</a>
+            <hr class="wp-header-end">
+            
+            <form id="posts-filter" method="get">
+                <!-- These hidden fields are essential for bulk actions and filtering to work -->
+                <input type="hidden" name="post_type" value="event" />
+                <input type="hidden" name="page" value="<?php echo esc_attr( $_REQUEST['page'] ); ?>" />
+                
+                <?php
+                $list_table->views();
+                $list_table->search_box( 'Search Events', 'event' );
+                $list_table->display();
+                ?>
+            </form>
+        </div>
+        <?php
+    }
 
     // --- 4. ENQUEUE SCRIPTS ---
     function my_calendar_admin_enqueue_scripts( $hook ) {
-        // MODIFIED: The hook name is now 'event_page_calendar-settings' again.
-        if ( 'event_page_calendar-settings' !== $hook ) return;
+        // MODIFIED: The hook name is now correct for our new menu structure.
+        if ( 'tw-calendar_page_calendar-settings' !== $hook ) return;
         wp_enqueue_style( 'wp-color-picker' );
         wp_enqueue_script( 'wp-color-picker' );
     }
 
-    // --- (All remaining functions are unchanged) ---
-
+    // --- 5. RENDER THE SETTINGS PAGE HTML ---
     function my_calendar_render_settings_page() {
         if ( ! current_user_can( 'manage_options' ) ) return;
         
@@ -108,7 +136,6 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
 
             <form action="options.php" method="post">
                 <?php settings_fields( 'my_calendar_settings_group' ); ?>
-
                 <div id="settings-container" style="display: flex; gap: 30px;">
                     <div class="settings-main-column" style="flex: 2;">
                         <div class="settings-section" id="global-settings-section">
@@ -165,6 +192,7 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         <?php
     }
 
+    // --- 6. HELPER TO RENDER COLOR FIELDS ---
     function my_calendar_render_color_fields_subset( $group, $values, $keys_to_render, $heading = null, $id = null, $is_template = false ) {
         $defaults = my_calendar_get_default_colors();
         $all_fields = [
@@ -196,6 +224,7 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         if ($is_template) echo '</div>';
     }
     
+    // --- 7. JAVASCRIPT ---
     function my_calendar_settings_page_javascript() {
         ?>
         <script>
@@ -271,6 +300,7 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         <?php
     }
 
+    // --- 8. SAVE & SANITIZE ---
     function my_calendar_register_settings_save_handler() {
         register_setting( 'my_calendar_settings_group', 'my_calendar_settings', 'my_calendar_sanitize_settings' );
     }
@@ -283,7 +313,7 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         $defaults = my_calendar_get_default_colors();
         $color_keys = array_keys($defaults);
 
-        if ( !empty( $input['global'] ) && is_array( 'my_calendar_settings_page' ) ) {
+        if ( !empty( $input['global'] ) && is_array( $input['global'] ) ) {
             $sanitized_output['global'] = [];
             foreach ( $color_keys as $key ) {
                 if ( isset( $input['global'][$key] ) ) {
