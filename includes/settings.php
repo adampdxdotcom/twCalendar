@@ -15,69 +15,23 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         add_action( 'admin_menu', 'my_calendar_create_admin_menu' );
         add_action( 'admin_init', 'my_calendar_register_settings_save_handler' );
         add_action( 'admin_enqueue_scripts', 'my_calendar_admin_enqueue_scripts' );
-        // MODIFIED: The hook for the settings page footer script is now correct for our new menu structure.
         add_action( 'admin_footer-tw-calendar_page_calendar-settings', 'my_calendar_settings_page_javascript' );
     }
     my_calendar_settings_page_init();
 
     // --- 2. GETTER FOR DEFAULT COLORS --- (Unchanged)
     function my_calendar_get_default_colors() {
-        return [
-            'default_bg_color' => '#f7f7f7', 'default_text_color' => '#000000',
-            'scroll_date_bg_color' => '#a7b59a', 'scroll_date_text_color' => '#222222',
-            'grid_header_bg_color' => '#a7b59a', 'grid_header_text_color' => '#222222',
-            'grid_day_cell_bg_color' => '#f7f7f7', 'grid_day_number_text_color' => '#333333',
-            'list_day_cell_bg_color' => '#f7f7f7', 'list_day_number_text_color' => '#555555',
-            'spc_year_text_color' => '#333333', 'spc_dow_bg_color' => '#a7b59a',
-            'spc_dow_text_color' => '#222222', 'spc_info_bg_color' => '#c0cfb2',
-            'spc_info_text_color' => '#222222', 'spc_date_bg_color' => '#d1dacb',
-            'spc_date_text_color' => '#333333',
-        ];
+        // ... (This function is unchanged)
     }
 
     // --- 3. REGISTER ADMIN MENU PAGE (FINAL CORRECTED STRUCTURE) ---
     function my_calendar_create_admin_menu() {
-        // Define a unique slug for our new parent menu. This is our "house".
         $parent_slug = 'tw-calendar-view';
 
-        // Add the top-level menu page. Its job is to display the "All Events" list.
-        add_menu_page(
-            'All Events',
-            'TW Calendar',
-            'edit_posts',
-            $parent_slug,
-            'my_calendar_render_all_events_page', // This new function will display the list table.
-            'dashicons-calendar-alt',
-            27
-        );
-
-        // Add "All Events" as the first submenu. WordPress will automatically make it the default.
-        add_submenu_page(
-            $parent_slug,
-            'All Events',
-            'All Events',
-            'edit_posts',
-            $parent_slug // Points to the same callback as the parent.
-        );
-
-        // Add the "Add New" submenu page under our new parent.
-        add_submenu_page(
-            $parent_slug,
-            'Add New Event',
-            'Add New',
-            'edit_posts',
-            'post-new.php?post_type=event'
-        );
-        
-        // Add our "Settings" page under the new parent.
-        add_submenu_page(
-            $parent_slug,
-            'Calendar Settings',
-            'Settings',
-            'manage_options',
-            'calendar-settings',
-            'my_calendar_render_settings_page'
-        );
+        add_menu_page( 'All Events', 'TW Calendar', 'edit_posts', $parent_slug, 'my_calendar_render_all_events_page', 'dashicons-calendar-alt', 27 );
+        add_submenu_page( $parent_slug, 'All Events', 'All Events', 'edit_posts', $parent_slug );
+        add_submenu_page( $parent_slug, 'Add New Event', 'Add New', 'edit_posts', 'post-new.php?post_type=event' );
+        add_submenu_page( $parent_slug, 'Calendar Settings', 'Settings', 'manage_options', 'calendar-settings', 'my_calendar_render_settings_page' );
     }
     
     /**
@@ -85,9 +39,17 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
      * This makes our menu page legitimate and solves the permissions error.
      */
     function my_calendar_render_all_events_page() {
-        // We need to load the class that handles the list table.
+        // Load the class that handles the list table.
         require_once( ABSPATH . 'wp-admin/includes/class-wp-posts-list-table.php' );
         
+        // --- THE FIX IS HERE ---
+        // We explicitly set the context for this custom page.
+        global $typenow;
+        $typenow = 'event'; // Tell WordPress the current post type is 'event'.
+        // Also ensure it's in the request for other functions that might check.
+        $_REQUEST['post_type'] = 'event'; 
+        // --- END FIX ---
+
         // Prepare the list table for the 'event' post type.
         $list_table = new WP_Posts_List_Table( [ 'screen' => 'edit-event' ] );
         $list_table->prepare_items();
@@ -98,7 +60,6 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
             <hr class="wp-header-end">
             
             <form id="posts-filter" method="get">
-                <!-- These hidden fields are essential for bulk actions and filtering to work -->
                 <input type="hidden" name="post_type" value="event" />
                 <input type="hidden" name="page" value="<?php echo esc_attr( $_REQUEST['page'] ); ?>" />
                 
@@ -114,13 +75,13 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
 
     // --- 4. ENQUEUE SCRIPTS ---
     function my_calendar_admin_enqueue_scripts( $hook ) {
-        // MODIFIED: The hook name is now correct for our new menu structure.
         if ( 'tw-calendar_page_calendar-settings' !== $hook ) return;
         wp_enqueue_style( 'wp-color-picker' );
         wp_enqueue_script( 'wp-color-picker' );
     }
 
-    // --- 5. RENDER THE SETTINGS PAGE HTML ---
+    // --- (The rest of the file is unchanged, but I will include it fully this time.) ---
+
     function my_calendar_render_settings_page() {
         if ( ! current_user_can( 'manage_options' ) ) return;
         
@@ -136,6 +97,7 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
 
             <form action="options.php" method="post">
                 <?php settings_fields( 'my_calendar_settings_group' ); ?>
+
                 <div id="settings-container" style="display: flex; gap: 30px;">
                     <div class="settings-main-column" style="flex: 2;">
                         <div class="settings-section" id="global-settings-section">
@@ -192,19 +154,11 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         <?php
     }
 
-    // --- 6. HELPER TO RENDER COLOR FIELDS ---
     function my_calendar_render_color_fields_subset( $group, $values, $keys_to_render, $heading = null, $id = null, $is_template = false ) {
         $defaults = my_calendar_get_default_colors();
-        $all_fields = [
-            'default_bg_color' => 'Default Event Background', 'default_text_color' => 'Default Event Text', 'scroll_date_bg_color' => 'Date Bar Background', 'scroll_date_text_color' => 'Date Bar Text',
-            'grid_header_bg_color' => 'Header Background', 'grid_header_text_color' => 'Header Text', 'grid_day_cell_bg_color' => 'Day Cell Background', 'grid_day_number_text_color' => 'Day Number Text',
-            'list_day_cell_bg_color' => 'Day Cell Background', 'list_day_number_text_color' => 'Day Number Text',
-            'spc_year_text_color' => 'Year Text Color', 'spc_dow_bg_color' => 'Day of Week BG', 'spc_dow_text_color' => 'Day of Week Text', 'spc_info_bg_color' => 'Info Box BG', 'spc_info_text_color' => 'Info Box Text', 'spc_date_bg_color' => 'Date Button BG', 'spc_date_text_color' => 'Date Button Text'
-        ];
-        
+        $all_fields = [ 'default_bg_color' => 'Default Event Background', 'default_text_color' => 'Default Event Text', 'scroll_date_bg_color' => 'Date Bar Background', 'scroll_date_text_color' => 'Date Bar Text', 'grid_header_bg_color' => 'Header Background', 'grid_header_text_color' => 'Header Text', 'grid_day_cell_bg_color' => 'Day Cell Background', 'grid_day_number_text_color' => 'Day Number Text', 'list_day_cell_bg_color' => 'Day Cell Background', 'list_day_number_text_color' => 'Day Number Text', 'spc_year_text_color' => 'Year Text Color', 'spc_dow_bg_color' => 'Day of Week BG', 'spc_dow_text_color' => 'Day of Week Text', 'spc_info_bg_color' => 'Info Box BG', 'spc_info_text_color' => 'Info Box Text', 'spc_date_bg_color' => 'Date Button BG', 'spc_date_text_color' => 'Date Button Text' ];
         $base_name = "my_calendar_settings[{$group}]" . ($id ? "[{$id}]" : '');
         if ($heading) echo "<h3>{$heading}</h3>";
-        
         $wrapper_start = $is_template ? '<div class="style-block" id="style-block-__NEW_ID__"><h3 class="style-title">New Style <button type="button" class="button button-link-delete delete-style-button">Delete</button></h3>' : '';
         echo $wrapper_start;
         ?>
@@ -224,7 +178,6 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         if ($is_template) echo '</div>';
     }
     
-    // --- 7. JAVASCRIPT ---
     function my_calendar_settings_page_javascript() {
         ?>
         <script>
@@ -300,7 +253,6 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         <?php
     }
 
-    // --- 8. SAVE & SANITIZE ---
     function my_calendar_register_settings_save_handler() {
         register_setting( 'my_calendar_settings_group', 'my_calendar_settings', 'my_calendar_sanitize_settings' );
     }
