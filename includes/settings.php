@@ -25,15 +25,15 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         // Hook to add the dashboard above the list table
         add_filter( 'views_edit-event', 'my_calendar_add_dashboard_to_events_list' );
         
-        // Hook for custom admin styles on the list page
-        add_action( 'admin_head', 'my_calendar_dashboard_styles' );
+        // Hook for custom admin styles and JS on the list page
+        add_action( 'admin_head', 'my_calendar_dashboard_styles_and_scripts' );
     }
     my_calendar_settings_page_init();
     
     /**
-     * Adds custom CSS to the admin head for the main Events/Plays list page.
+     * Adds custom CSS and JS to the admin head for the main Events/Plays list page.
      */
-    function my_calendar_dashboard_styles() {
+    function my_calendar_dashboard_styles_and_scripts() {
         $screen = get_current_screen();
         // Target only the main list table for 'event' post types.
         if ( ! $screen || 'edit-event' !== $screen->id ) {
@@ -41,11 +41,23 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         }
         ?>
         <style>
+            /* Style the main H1 title */
             .post-type-event .wp-heading-inline {
                 font-size: 28px;
                 font-family: 'RocaOne', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
             }
+            /* Adjust spacing for the moved button */
+            .post-type-event .page-title-action {
+                margin-left: 10px;
+            }
         </style>
+        <script>
+            // Use jQuery to move the 'Add New' button to the correct location
+            jQuery(document).ready(function($) {
+                // Find the "Add New" button and move it after the filter bar
+                $('.wrap .page-title-action').insertAfter('.subsubsub');
+            });
+        </script>
         <?php
     }
 
