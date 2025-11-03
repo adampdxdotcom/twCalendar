@@ -15,7 +15,7 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         add_action( 'admin_menu', 'my_calendar_create_admin_menu' );
         add_action( 'admin_init', 'my_calendar_register_settings_save_handler' );
         add_action( 'admin_enqueue_scripts', 'my_calendar_admin_enqueue_scripts' );
-        add_action( 'admin_footer-tw-calendar_page_calendar-settings', 'my_calendar_settings_page_javascript' );
+        add_action( 'admin_footer-event_page_calendar-settings', 'my_calendar_settings_page_javascript' );
     }
     my_calendar_settings_page_init();
 
@@ -36,78 +36,34 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
 
     // --- 3. REGISTER ADMIN MENU PAGE (FINAL CORRECTED STRUCTURE) ---
     function my_calendar_create_admin_menu() {
-        $parent_slug = 'tw-calendar-view';
+        global $menu;
 
-        // Add the top-level menu page. We capture the returned "hook" to use later.
-        $hook_suffix = add_menu_page(
-            'All Events',
-            'TW Calendar',
-            'edit_posts',
-            $parent_slug,
-            'my_calendar_render_all_events_page',
-            'dashicons-calendar-alt',
-            27
+        // Loop through the main menu array to find the 'Events' menu item.
+        foreach ( $menu as $key => $item ) {
+            // The slug for the 'Events' CPT menu is 'edit.php?post_type=event'.
+            if ( 'edit.php?post_type=event' === $item[2] ) {
+                // Change the name from 'Events' to 'TW Calendar'.
+                $menu[$key][0] = 'TW Calendar';
+                // Change the icon from the default pushpin to the calendar icon.
+                $menu[$key][6] = 'dashicons-calendar-alt';
+                break; // Stop looping once we've found and changed it.
+            }
+        }
+        
+        // Now, add our "Settings" page as a submenu to the REAL 'Events' menu.
+        add_submenu_page(
+            'edit.php?post_type=event', // The parent is the real 'Events' menu.
+            'Calendar Settings',
+            'Settings',
+            'manage_options',
+            'calendar-settings',
+            'my_calendar_render_settings_page'
         );
-
-        // This is the crucial hook that runs early and sets up our page's identity.
-        add_action( "load-{$hook_suffix}", 'my_calendar_load_events_list_table_screen' );
-
-        add_submenu_page( $parent_slug, 'All Events', 'All Events', 'edit_posts', $parent_slug );
-        add_submenu_page( $parent_slug, 'Add New Event', 'Add New', 'edit_posts', 'post-new.php?post_type=event' );
-        add_submenu_page( $parent_slug, 'Calendar Settings', 'Settings', 'manage_options', 'calendar-settings', 'my_calendar_render_settings_page' );
-    }
-
-    /**
-     * This function runs on the special 'load-...' hook.
-     * It runs BEFORE the page content is rendered and sets the correct context.
-     * This is the key to solving the permissions and filtering errors.
-     */
-    function my_calendar_load_events_list_table_screen() {
-        require_once( ABSPATH . 'wp-admin/includes/class-wp-posts-list-table.php' );
-        
-        global $typenow, $current_screen;
-        $typenow = 'event';
-        set_current_screen( 'edit-event' );
-
-        global $my_calendar_list_table;
-        $my_calendar_list_table = new WP_Posts_List_Table( [ 'screen' => get_current_screen() ] );
-        
-        add_filter( 'set-screen-option', function( $status, $option, $value ) {
-            if ( 'edit_event_per_page' === $option ) { return $value; }
-            return $status;
-        }, 10, 3 );
-    }
-
-    /**
-     * This function now has a much simpler job: just render the page.
-     */
-    function my_calendar_render_all_events_page() {
-        global $my_calendar_list_table;
-        
-        $my_calendar_list_table->prepare_items();
-        ?>
-        <div class="wrap">
-            <h1 class="wp-heading-inline">Events</h1>
-            <a href="post-new.php?post_type=event" class="page-title-action">Add New</a>
-            <hr class="wp-header-end">
-            
-            <form id="posts-filter" method="get">
-                <input type="hidden" name="post_type" value="event" />
-                <input type="hidden" name="page" value="<?php echo esc_attr( $_REQUEST['page'] ); ?>" />
-                
-                <?php
-                $my_calendar_list_table->views();
-                $my_calendar_list_table->search_box( 'Search Events', 'event' );
-                $my_calendar_list_table->display();
-                ?>
-            </form>
-        </div>
-        <?php
     }
 
     // --- 4. ENQUEUE SCRIPTS ---
     function my_calendar_admin_enqueue_scripts( $hook ) {
-        if ( 'tw-calendar_page_calendar-settings' !== $hook ) return;
+        if ( 'event_page_calendar-settings' !== $hook ) return;
         wp_enqueue_style( 'wp-color-picker' );
         wp_enqueue_script( 'wp-color-picker' );
     }
