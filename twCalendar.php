@@ -90,3 +90,85 @@ function tw_calendar_enqueue_assets() {
     );
 }
 add_action( 'wp_enqueue_scripts', 'tw_calendar_enqueue_assets' );
+
+
+// =========================================================================
+// == Centralized Logging to TW Status Center (NEWLY ADDED)
+// =========================================================================
+
+/**
+ * Logs when a Calendar Event post is created or updated.
+ *
+ * This function is attached to the 'save_post' hook.
+ *
+ * @param int     $post_id The ID of the post being saved.
+ * @param WP_Post $post    The post object.
+ * @param bool    $update  Whether this is an update to an existing post.
+ */
+function tw_calendar_log_post_changes( $post_id, $post, $update ) {
+	// 1. Check if our logging function even exists. If not, stop.
+	if ( ! function_exists( 'tw_suite_log' ) ) {
+		return;
+	}
+
+	// 2. We only care about the 'event' post type.
+	if ( 'event' !== $post->post_type ) {
+		return;
+	}
+
+	// 3. Ignore auto-saves, revisions, and non-published posts to prevent log spam.
+	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) { return; }
+	if ( wp_is_post_revision( $post_id ) ) { return; }
+    if ( 'publish' !== $post->post_status ) { return; }
+
+	// 4. Get the user who made the change.
+	$user = get_user_by( 'id', $post->post_author );
+	$user_name = $user ? $user->display_name : 'System';
+
+	// 5. Determine if it was a creation or an update.
+	$action = $update ? 'updated' : 'created';
+
+	// 6. Construct the final log message.
+	$message = sprintf(
+		'Event "%s" was %s by %s.',
+		esc_html( $post->post_title ),
+		$action,
+		$user_name
+	);
+
+	// 7. Send the log to the Status Center.
+	tw_suite_log( 'TW Calendar', $message, 'INFO' );
+}
+add_action( 'save_post', 'tw_calendar_log_post_changes', 10, 3 );
+
+
+/**
+ * Logs when a Calendar Event post is deleted.
+ *
+ * This function is attached to the 'before_delete_post' hook.
+ *
+ * @param int $post_id The ID of the post being deleted.
+ */
+function tw_calendar_log_deleted_post( $post_id ) {
+	// 1. Check if our logging function exists.
+	if ( ! function_exists( 'tw_suite_log' ) ) {
+		return;
+	}
+
+	// 2. Get the post object before it's gone.
+	$post = get_post( $post_id );
+	if ( ! $post || 'event' !== $post->post_type ) {
+		return;
+	}
+
+	// 3. Get the user who is performing the deletion.
+	$user = wp_get_current_user();
+	$user_name = $user ? $user->display_name : 'System';
+
+	// 4. Construct the final message.
+	$message = sprintf( 'Event "%s" was deleted by %s.', esc_html( $post->post_title ), $user_name );
+
+	// 5. Send the log. We use 'WARNING' as the level because deletion is a significant event.
+	tw_suite_log( 'TW Calendar', $message, 'WARNING' );
+}
+add_action( 'before_delete_post', 'tw_calendar_log_deleted_post' );
