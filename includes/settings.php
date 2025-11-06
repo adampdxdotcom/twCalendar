@@ -21,6 +21,7 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         add_action( 'pre_get_posts', 'my_calendar_merge_post_types_in_list' );
         add_filter( 'manage_event_posts_columns', 'my_calendar_add_type_column' );
         add_action( 'manage_event_posts_custom_column', 'my_calendar_render_type_column', 10, 2 );
+        add_action( 'manage_play_posts_custom_column', 'my_calendar_render_type_column', 10, 2 );
 
         // Hook to add the dashboard above the list table
         add_filter( 'views_edit-event', 'my_calendar_add_dashboard_to_events_list' );
