@@ -116,10 +116,26 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
 
     /**
      * Modifies the main query on the 'event' post type list page to also include 'play' posts.
+     * This version is smarter and avoids modifying the query when an action (like trash, edit, etc.)
+     * is being performed, which prevents fatal errors.
      */
     function my_calendar_merge_post_types_in_list( $query ) {
-        if ( is_admin() && $query->is_main_query() && isset( $query->query_vars['post_type'] ) && $query->query_vars['post_type'] === 'event' ) {
-            $query->set( 'post_type', array( 'event', 'play' ) );
+        // We must check that we are on an admin screen.
+        if ( ! is_admin() ) {
+            return;
+        }
+
+        // Only run on the main query for the 'event' post type screen.
+        if ( $query->is_main_query() && isset( $query->query_vars['post_type'] ) && 'event' === $query->query_vars['post_type'] ) {
+
+            // CRITICAL CHECK: If an action is being performed (e.g., trash, untrash, bulk edit),
+            // do NOT modify the query. This keeps the page stable during operations.
+            if ( ! empty( $_REQUEST['action'] ) && $_REQUEST['action'] !== '-1' ) {
+                return;
+            }
+
+            // If we are just viewing the list, it's safe to merge the post types.
+            $query->set( 'post_type', [ 'event', 'play' ] );
         }
     }
 
