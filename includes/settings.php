@@ -28,6 +28,9 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
         
         // Hook for custom admin styles and JS on the list page
         add_action( 'admin_head', 'my_calendar_dashboard_styles_and_scripts' );
+
+        // NEW: Hook to intercept the redirect after trashing a post to prevent fatal errors.
+        add_action( 'trashed_post', 'my_calendar_redirect_after_trash' );
     }
     my_calendar_settings_page_init();
     
@@ -101,6 +104,25 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
             'calendar-settings',
             'my_calendar_render_settings_page'
         );
+    }
+
+    /**
+     * After an event or play is trashed from the merged list, this function
+     * hijacks the default redirect and sends the user to a stable URL,
+     * preventing the fatal error on the subsequent page load.
+     *
+     * @param int $post_id The ID of the post that was just trashed.
+     */
+    function my_calendar_redirect_after_trash( $post_id ) {
+        $post_type = get_post_type( $post_id );
+
+        // Only act if the trashed post is one of ours.
+        if ( in_array( $post_type, [ 'event', 'play' ], true ) ) {
+            // Redirect to the main, stable 'event' list page.
+            wp_redirect( admin_url( 'edit.php?post_type=event' ) );
+            // It is critical to exit here to prevent WordPress's own redirect.
+            exit;
+        }
     }
 
     /**
