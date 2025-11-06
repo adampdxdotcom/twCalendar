@@ -162,17 +162,17 @@ if ( ! function_exists( 'my_calendar_settings_page_init' ) ) {
     }
 
     /**
-     * Adds a "Type" column to the list table header.
+     * Defines a simplified and stable set of columns for the merged list view.
+     * This prevents "Array to string conversion" warnings by removing columns
+     * that may have inconsistent data between post types (e.g., taxonomies).
      */
     function my_calendar_add_type_column( $columns ) {
-        $new_columns = [];
-        foreach ( $columns as $key => $title ) {
-            $new_columns[$key] = $title;
-            if ( 'title' === $key ) {
-                $new_columns['post_type'] = 'Type';
-            }
-        }
-        return $new_columns;
+        return [
+            'cb'        => $columns['cb'], // Keep the essential checkbox column
+            'title'     => __( 'Title' ),
+            'post_type' => __( 'Type' ),
+            'date'      => __( 'Date' ),
+        ];
     }
 
     /**
