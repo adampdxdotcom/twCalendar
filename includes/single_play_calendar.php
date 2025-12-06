@@ -78,7 +78,6 @@ if ( ! function_exists( 'my_single_play_calendar_shortcode' ) ) {
                 }
             }
             
-            // Validate Matinees
             if (is_array($matinee_dates_raw)) {
                 foreach ( $matinee_dates_raw as $matinee_str ) {
                     $matinee_str = trim((string) $matinee_str);
@@ -87,12 +86,10 @@ if ( ! function_exists( 'my_single_play_calendar_shortcode' ) ) {
                 }
             }
 
-            // Validate Added Dates
             if ( ! empty( $additional_dates_raw ) && is_array( $additional_dates_raw ) ) {
                 foreach ( $additional_dates_raw as $added_date_str ) {
                     $added_date_str = trim( (string) $added_date_str );
                     if ( $added_date_str === '' || $added_date_str === '0000-00-00 00:00:00' || strtotime( $added_date_str ) <= 0 ) continue;
-                    
                     try {
                         $added_date_obj = new DateTime( $added_date_str );
                         $all_events[] = [
@@ -121,7 +118,6 @@ if ( ! function_exists( 'my_single_play_calendar_shortcode' ) ) {
             <?php endif; ?>
             
             <?php 
-            // Group events by Y-m-d key
             $unique_dates = []; 
             foreach ($all_events as $event) {
                 $date_key = $event['date']->format('Y-m-d');
@@ -129,7 +125,7 @@ if ( ! function_exists( 'my_single_play_calendar_shortcode' ) ) {
                 
                 $unique_dates[$date_key]['types'][] = $event['type'];
                 
-                // If this is a matinee, save the full date object to preserve the Time
+                // Capture the specific Matinee datetime object
                 if ($event['type'] === 'matinee') {
                     $unique_dates[$date_key]['matinee_obj'] = $event['date'];
                 }
@@ -138,60 +134,46 @@ if ( ! function_exists( 'my_single_play_calendar_shortcode' ) ) {
             }
             uksort($unique_dates, function($a, $b) { return strtotime($a) <=> strtotime($b); });
 
-            // Display Loop
+            // --- DISPLAY LOOP ---
             foreach ($unique_dates as $date_key => $data) {
                 $types = $data['types'];
                 $date_obj = new DateTime($date_key);
                 $is_cancelled = in_array( $date_obj->format('Y-m-d'), $cancellations_list );
 
-                $has_matinee = in_array('matinee', $types);
-                $has_performance = in_array('performance', $types);
-                $has_added = in_array('offday_added', $types);
-
-                // --- Scenario 1: Both Matinee AND Regular Performance (Same Day) ---
-                // We render ONE grid button containing info for both to preserve layout.
-                if ($has_matinee && $has_performance) {
-                    // Use Matinee styling to highlight the busy day
-                    $css_classes = ['spc-item', 'spc-button']; // Use 'spc-button' to fit in grid, not 'spc-info-box'
-                    $style = 'background-color:'.esc_attr($spc_info_bg_color).'; color:'.esc_attr($spc_info_text_color).';';
-                    
-                    $mat_obj = $data['matinee_obj'] ? $data['matinee_obj'] : $date_obj;
-                    
-                    // Display Date (for evening) AND Matinee Time
-                    // e.g. "Feb 7 <br> Matinee 2:00pm"
-                    $display_text = $date_obj->format('M j') . '<br><span style="font-size: 0.85em;">Matinee ' . $mat_obj->format('g:ia') . '</span>';
-
-                    if ($is_cancelled) { $css_classes[] = 'cancelled'; $style = ''; }
-                    
-                    echo '<div class="' . esc_attr( implode(' ', $css_classes) ) . '" style="' . $style . '">' . $display_text . '</div>';
-                
-                // --- Scenario 2: Matinee Only ---
-                } elseif ($has_matinee) {
-                    // We treat this as a button now so it stays inline with the week's grid
-                    $css_classes = ['spc-item', 'spc-button'];
-                    $style = 'background-color:'.esc_attr($spc_info_bg_color).'; color:'.esc_attr($spc_info_text_color).';';
-                    
-                    $mat_obj = $data['matinee_obj'] ? $data['matinee_obj'] : $date_obj;
-                    $display_text = $date_obj->format('M j') . '<br><span style="font-size: 0.85em;">Matinee ' . $mat_obj->format('g:ia') . '</span>';
-                    
-                    echo '<div class="' . esc_attr( implode(' ', $css_classes) ) . '" style="' . $style . '">' . $display_text . '</div>';
-
-                // --- Scenario 3: Added Off-Day ---
-                } elseif ($has_added) {
-                    // Added dates might have custom text, keep as button for grid alignment
-                    $css_classes = ['spc-item', 'spc-button'];
-                    $style = 'background-color:'.esc_attr($spc_info_bg_color).'; color:'.esc_attr($spc_info_text_color).';';
-                    echo '<div class="' . esc_attr( implode(' ', $css_classes) ) . '" style="' . $style . '">' . $data['text'] . '</div>';
-
-                // --- Scenario 4: Standard Performance ---
-                } else {
+                // 1. FIRST: Check for Regular Performance and print the BUTTON.
+                // This ensures the button renders in the grid flow first.
+                if (in_array('performance', $types)) {
                     $css_classes = ['spc-item', 'spc-button'];
                     $style = 'background-color:'.esc_attr($spc_date_bg_color).'; color:'.esc_attr($spc_date_text_color).';';
                     $display_text = $date_obj->format('M j');
 
-                    if ($is_cancelled) { $css_classes[] = 'cancelled'; $style = ''; }
-
+                    if ($is_cancelled) {
+                        $css_classes[] = 'cancelled';
+                        $style = ''; 
+                    }
+                    
                     echo '<div class="' . esc_attr( implode(' ', $css_classes) ) . '" style="' . $style . '">' . $display_text . '</div>';
+                }
+
+                // 2. SECOND: Check for Matinee and print the INFO BOX.
+                // This typically renders full-width, appearing "below" the grid row.
+                if (in_array('matinee', $types)) {
+                    // Use the captured matinee object to get the correct time
+                    $mat_obj = $data['matinee_obj'] ? $data['matinee_obj'] : $date_obj;
+                    
+                    $css_classes = ['spc-item', 'spc-info-box'];
+                    $style = 'background-color:'.esc_attr($spc_info_bg_color).'; color:'.esc_attr($spc_info_text_color).';';
+                    $display_text = $mat_obj->format('l \M\a\t\i\n\e\e') . '<br>' . $mat_obj->format('M j @ g:ia');
+                    
+                    echo '<div class="' . esc_attr( implode(' ', $css_classes) ) . '" style="' . $style . '">' . $display_text . '</div>';
+                }
+
+                // 3. THIRD: Check for Added Off-Days (Also Info Boxes)
+                if (in_array('offday_added', $types)) {
+                     $css_classes = ['spc-item', 'spc-info-box'];
+                     $style = 'background-color:'.esc_attr($spc_info_bg_color).'; color:'.esc_attr($spc_info_text_color).';';
+                     $display_text = $data['text'];
+                     echo '<div class="' . esc_attr( implode(' ', $css_classes) ) . '" style="' . $style . '">' . $display_text . '</div>';
                 }
             }
             ?>
