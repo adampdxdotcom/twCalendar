@@ -121,42 +121,67 @@ if ( ! function_exists( 'my_single_play_calendar_shortcode' ) ) {
             <?php endif; ?>
             
             <?php 
-            $unique_events = [];
+            // --- FIX START: Corrected grouping logic to capture Matinee Times and fix variable typo ---
+            $unique_dates = []; // Fixed variable name from $unique_events to $unique_dates
             foreach ($all_events as $event) {
                 $date_key = $event['date']->format('Y-m-d');
-                if (!isset($unique_dates[$date_key])) { $unique_dates[$date_key] = []; }
+                if (!isset($unique_dates[$date_key])) { $unique_dates[$date_key] = [ 'types' => [], 'matinee_obj' => null ]; }
+                
                 $unique_dates[$date_key]['types'][] = $event['type'];
+                
+                // If this is a matinee, save the full date object so we don't lose the specific Time
+                if ($event['type'] === 'matinee') {
+                    $unique_dates[$date_key]['matinee_obj'] = $event['date'];
+                }
+
                 if (isset($event['text'])) { $unique_dates[$date_key]['text'] = $event['text']; }
             }
             uksort($unique_dates, function($a, $b) { return strtotime($a) <=> strtotime($b); });
 
+            // --- FIX START: Revised Display Loop to allow both Matinee AND Regular show ---
             foreach ($unique_dates as $date_key => $data) {
                 $types = $data['types'];
-                $date_obj = new DateTime($date_key);
+                $date_obj = new DateTime($date_key); // This object defaults to 00:00:00
                 $is_cancelled = in_array( $date_obj->format('Y-m-d'), $cancellations_list );
-                $css_classes = ['spc-item'];
-                $style = '';
 
+                // 1. Check for Matinee and display independently
                 if (in_array('matinee', $types)) {
-                    $css_classes[] = 'spc-info-box';
+                    // Use the specific matinee object if available to get the correct time
+                    $mat_obj = $data['matinee_obj'] ? $data['matinee_obj'] : $date_obj;
+                    
+                    $css_classes = ['spc-item', 'spc-info-box'];
                     $style = 'background-color:'.esc_attr($spc_info_bg_color).'; color:'.esc_attr($spc_info_text_color).';';
-                    $display_text = $date_obj->format('l \M\a\t\i\n\e\e') . '<br>' . $date_obj->format('M j @ g:ia');
-                } elseif (in_array('offday_added', $types)) {
-                     $css_classes[] = 'spc-info-box';
-                     $style = 'background-color:'.esc_attr($spc_info_bg_color).'; color:'.esc_attr($spc_info_text_color).';';
-                     $display_text = $data['text'];
-                } else {
-                    $css_classes[] = 'spc-button';
-                    $style = 'background-color:'.esc_attr($spc_date_bg_color).'; color:'.esc_attr($spc_date_text_color).';';
-                    $display_text = $date_obj->format('M j');
+                    $display_text = $mat_obj->format('l \M\a\t\i\n\e\e') . '<br>' . $mat_obj->format('M j @ g:ia');
+                    
+                    echo '<div class="' . esc_attr( implode(' ', $css_classes) ) . '" style="' . $style . '">' . $display_text . '</div>';
                 }
 
-                if ($is_cancelled && in_array('performance', $types)) {
-                    $css_classes[] = 'cancelled';
-                    $style = ''; 
+                // 2. Check for Regular Show OR Added Off-day
+                // We use distinct logic here so it can print AFTER the matinee if both exist
+                if (in_array('performance', $types) || in_array('offday_added', $types)) {
+                    
+                    $css_classes = ['spc-item'];
+                    $style = '';
+                    $display_text = '';
+
+                    if (in_array('offday_added', $types)) {
+                         $css_classes[] = 'spc-info-box';
+                         $style = 'background-color:'.esc_attr($spc_info_bg_color).'; color:'.esc_attr($spc_info_text_color).';';
+                         $display_text = $data['text'];
+                    } else {
+                        // Standard Performance
+                        $css_classes[] = 'spc-button';
+                        $style = 'background-color:'.esc_attr($spc_date_bg_color).'; color:'.esc_attr($spc_date_text_color).';';
+                        $display_text = $date_obj->format('M j');
+
+                        if ($is_cancelled) {
+                            $css_classes[] = 'cancelled';
+                            $style = ''; 
+                        }
+                    }
+
+                    echo '<div class="' . esc_attr( implode(' ', $css_classes) ) . '" style="' . $style . '">' . $display_text . '</div>';
                 }
-                
-                echo '<div class="' . esc_attr( implode(' ', $css_classes) ) . '" style="' . $style . '">' . $display_text . '</div>';
             }
             ?>
             
